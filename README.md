@@ -6,9 +6,9 @@ MIDI is a 3D generative model for single image to compositional 3D scene generat
 
 ## 🌟 Features
 
-* High Quality: It produces diverse 3D scenes at high quality with intricate shape.
-* High Generalizability: It generalizes to real image and stylized image inputs although trained only on synthetic data.
-* High Efficiency: It generates 3D scenes from segmented instance images, without lengthy steps or time-consuming per-scene optimization.
+* **High Quality:** It produces diverse 3D scenes at high quality with intricate shape.
+* **High Generalizability:** It generalizes to real image and stylized image inputs although trained only on synthetic data.
+* **High Efficiency:** It generates 3D scenes from segmented instance images, without lengthy steps or time-consuming per-scene optimization.
 
 ## 🔥 Updates
 
@@ -50,33 +50,29 @@ The following running scripts will automatically download model weights from [VA
 python gradio_demo.py
 ```
 
-**The web demo is also available on [Hugging Face Spaces](https://huggingface.co/spaces/VAST-AI/MIDI-3D)!**
-
-Please check out our instructional video!
+**Important!!** Please check out our instructional video!
 
 https://github.com/user-attachments/assets/4fc8aea4-010f-40c7-989d-6b1d9d3e3e09
 
+**The web demo is also available on [Hugging Face Spaces](https://huggingface.co/spaces/VAST-AI/MIDI-3D)!**
+
 ### Inference Scripts
 
-If running MIDI with command lines, you need to obtain the segmentation map of the scene image firstly. We provide a script to run [Grounded SAM](https://github.com/IDEA-Research/Grounded-Segment-Anything) in `scripts/grounding_sam.py`. An example:
+If running MIDI with command lines, you need to obtain the segmentation map of the scene image firstly. We provide a script to run [Grounded SAM](https://github.com/IDEA-Research/Grounded-Segment-Anything) in `scripts/grounding_sam.py`. The following example command will produce a segmentation map in the `./segmentation.png`.
 
 ```Bash
 python -m scripts.grounding_sam --image assets/example_data/Cartoon-Style/04_rgb.png --labels lamp sofa table dog --output ./
 ```
 
-The above command will produce a segmentation map in the `./segmentation.png`.
-
-Then you can run MIDI with the rgb image and segmentation map, using our provided inference script `scripts/inference_midi.py`:
+Then you can run MIDI with the rgb image and segmentation map, using our provided inference script `scripts/inference_midi.py`. The following command will save the generated 3D scene `output.glb` in the output dir.
 
 ```Bash
 python -m scripts.inference_midi --rgb assets/example_data/Cartoon-Style/00_rgb.png --seg assets/example_data/Cartoon-Style/00_seg.png --output-dir "./"
 ```
 
-It will save the generated 3D scene `output.glb` in the output dir.
-
 **Important!!!**
 
-* We recommend using the interactive demo to get a segmentation map of moderate granularity.
+* We recommend using the [interactive demo](#launch-demo) to get a segmentation map of moderate granularity.
 * If instances in your image are too close to the image border, please add `--do-image-padding` to the running scripts of MIDI.
 
 ## Citation
