@@ -12,6 +12,7 @@ from PIL import Image, ImageOps
 from skimage import measure
 
 from midi.pipelines.pipeline_midi import MIDIPipeline
+from midi.utils.smoothing import smooth_gpu
 
 
 def preprocess_image(rgb_image, seg_image):
@@ -127,9 +128,11 @@ def run_midi(
     for _, (logits_, grid_size, bbox_size, bbox_min, bbox_max) in enumerate(
         zip(*outputs)
     ):
-        grid_logits = logits_.view(grid_size).float().cpu().numpy()
+        grid_logits = logits_.view(grid_size)
+        grid_logits = smooth_gpu(grid_logits, method="gaussian", sigma=1)
+        torch.cuda.empty_cache()
         vertices, faces, normals, _ = measure.marching_cubes(
-            grid_logits, 0, method="lewiner"
+            grid_logits.float().cpu().numpy(), 0, method="lewiner"
         )
         vertices = vertices / grid_size * bbox_size + bbox_min
 
