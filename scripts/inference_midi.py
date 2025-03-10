@@ -102,8 +102,8 @@ def run_midi(
     rgb_image: Union[str, Image.Image],
     seg_image: Union[str, Image.Image],
     seed: int,
-    num_inference_steps: int,
-    guidance_scale: float,
+    num_inference_steps: int = 50,
+    guidance_scale: float = 7.0,
     do_image_padding: bool = False,
 ) -> trimesh.Scene:
     if do_image_padding:
