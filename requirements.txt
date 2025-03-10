@@ -1,0 +1,11 @@
+gradio
+gradio_litmodel3d
+gradio_image_prompter
+diffusers
+transformers
+torch
+torchvision
+einops
+torch_cluster
+huggingface_hub
+opencv-python
