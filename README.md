@@ -1,4 +1,4 @@
-# MIDI: Multi-Instance Diffusion for Single Image to 3D Scene Generation 👷
+# MIDI: Multi-Instance Diffusion for Single Image to 3D Scene Generation
 
 ## 🏠 [Project Page](https://huanngzh.github.io/MIDI-Page/) | [Paper](https://arxiv.org/abs/2412.03558) | [Model](https://huggingface.co/VAST-AI/MIDI-3D) | [Online Demo](https://huggingface.co/spaces/VAST-AI/MIDI-3D)
 
