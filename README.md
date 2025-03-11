@@ -2,6 +2,8 @@
 
 ## 🏠 [Project Page](https://huanngzh.github.io/MIDI-Page/) | [Paper](https://arxiv.org/abs/2412.03558) | [Model](https://huggingface.co/VAST-AI/MIDI-3D) | [Online Demo](https://huggingface.co/spaces/VAST-AI/MIDI-3D)
 
+![teaser](assets/doc/teaser.png)
+
 MIDI is a 3D generative model for single image to compositional 3D scene generation. Unlike existing methods that rely on reconstruction or retrieval techniques or recent approaches that employ multi-stage object-by-object generation, MIDI extends pre-trained image-to-3D object generation models to multi-instance diffusion models, enabling the simultaneous generation of multiple high-quality 3D instances with accurate spatial relationships and high generalizability.
 
 ## 🌟 Features
