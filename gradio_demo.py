@@ -235,9 +235,7 @@ with gr.Blocks() as demo:
                 )
 
             with gr.Accordion("Segmentation Settings", open=False):
-                polygon_refinement = gr.Checkbox(
-                    label="Polygon Refinement", value=False
-                )
+                polygon_refinement = gr.Checkbox(label="Polygon Refinement", value=True)
             seg_button = gr.Button("Run Segmentation")
 
             with gr.Accordion("Generation Settings", open=False):
