@@ -3,9 +3,12 @@ gradio_litmodel3d
 gradio_image_prompter
 diffusers
 transformers
-torch
-torchvision
 einops
-torch_cluster
+torch-cluster
 huggingface_hub
 opencv-python
+trimesh
+omegaconf
+scikit-image
+numpy==1.22.3
+peft
