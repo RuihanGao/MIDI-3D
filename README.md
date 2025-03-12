@@ -1,3 +1,5 @@
+
+https://github.com/user-attachments/assets/cafcae9a-70c9-4961-b739-415f639cb1cb
 # MIDI: Multi-Instance Diffusion for Single Image to 3D Scene Generation
 
 ## 🏠 [Project Page](https://huanngzh.github.io/MIDI-Page/) | [Paper](https://arxiv.org/abs/2412.03558) | [Model](https://huggingface.co/VAST-AI/MIDI-3D) | [Online Demo](https://huggingface.co/spaces/VAST-AI/MIDI-3D)
@@ -54,7 +56,7 @@ python gradio_demo.py
 
 **Important!!** Please check out our instructional video!
 
-https://github.com/user-attachments/assets/4fc8aea4-010f-40c7-989d-6b1d9d3e3e09
+https://github.com/user-attachments/assets/814c046e-f5c3-47cf-bb56-60154be8374c
 
 **The web demo is also available on [Hugging Face Spaces](https://huggingface.co/spaces/VAST-AI/MIDI-3D)!**
 
