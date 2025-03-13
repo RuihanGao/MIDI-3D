@@ -325,7 +325,13 @@ def grounded_segmentation(
         labels = labels.split(",")
 
     detections = detect(object_detector, image, labels, threshold)
-    detections = segment(processor, segmentator, image, detections, polygon_refinement)
+    detections = segment(
+        processor,
+        segmentator,
+        image,
+        detection_results=detections,
+        polygon_refinement=polygon_refinement,
+    )
 
     seg_map_pil = plot_segmentation(image, detections)
 
