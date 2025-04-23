@@ -480,8 +480,64 @@ class MIDIPipeline(DiffusionPipeline, TransformerDiffusionMixin, CustomAdapterMi
         )
 
     def _init_custom_adapter(
-        self, set_self_attn_module_names: Optional[List[str]] = None
+        self,
+        # Attention processor
+        set_self_attn_module_names: Optional[List[str]] = None,
+        # Image encoder 2
+        pretrained_image_encoder_2_processor_config: Optional[Dict[str, Any]] = None,
+        image_encoder_2_input_channels: int = 7,
+        image_encoder_2_init_projection_method: str = "clone",
+        # LoRA
+        transformer_lora_config: Optional[Dict[str, Any]] = None,
+        image_encoder_1_lora_config: Optional[Dict[str, Any]] = None,
+        image_encoder_2_lora_config: Optional[Dict[str, Any]] = None,
     ):
+        # Modify feature extractor 2 if needed
+        if pretrained_image_encoder_2_processor_config is not None:
+            self.feature_extractor_2 = BitImageProcessor.from_dict(
+                self.feature_extractor_2.to_dict(),
+                **(pretrained_image_encoder_2_processor_config or {}),
+            )
+
+        # Expand the input channels of the image encoder if needed
+        original_num_channels = self.image_encoder_2.config.num_channels
+        if original_num_channels < image_encoder_2_input_channels:
+            image_encoder_2: Dinov2Model = self.image_encoder_2
+            image_encoder_2_config = image_encoder_2.config
+            image_encoder_2_config.num_channels = image_encoder_2_input_channels
+            image_encoder_2_state_dict = image_encoder_2.state_dict()
+            projection_key = "embeddings.patch_embeddings.projection.weight"
+            projection_weight = image_encoder_2_state_dict[projection_key]
+            new_projection_weight = [projection_weight[:, :3]]
+            num_channels_left = image_encoder_2_config.num_channels - 3
+            while num_channels_left > 0:
+                if image_encoder_2_init_projection_method == "clone":
+                    new_projection_weight.append(
+                        projection_weight[
+                            :, : min(original_num_channels, num_channels_left)
+                        ].clone()
+                    )
+                elif image_encoder_2_init_projection_method == "zero":
+                    new_projection_weight.append(
+                        torch.zeros_like(
+                            projection_weight[
+                                :, : min(original_num_channels, num_channels_left)
+                            ]
+                        )
+                    )
+                else:
+                    raise ValueError(
+                        f"Unsupported image_encoder_2_init_projection_method: {image_encoder_2_init_projection_method}"
+                    )
+                num_channels_left -= original_num_channels
+            new_projection_weight = torch.cat(new_projection_weight, dim=1)
+            image_encoder_2_state_dict[projection_key] = new_projection_weight
+
+            self.image_encoder_2 = Dinov2Model(image_encoder_2_config)
+            self.image_encoder_2.load_state_dict(image_encoder_2_state_dict)
+
+        self.image_encoder_2 = self.image_encoder_2.to(self.device, self.dtype)
+
         # Set attention processor
         func_default = lambda name, hs, cad, ap: MIAttnProcessor2_0(use_mi=False)
         set_transformer_attn_processor(  # avoid warning
@@ -495,3 +551,75 @@ class MIDIPipeline(DiffusionPipeline, TransformerDiffusionMixin, CustomAdapterMi
             set_self_attn_proc_func=lambda name, hs, cad, ap: MIAttnProcessor2_0(),
             set_self_attn_module_names=set_self_attn_module_names,
         )
+
+        # LoRA
+        if transformer_lora_config is not None:
+            self.transformer.add_adapter(LoraConfig(**transformer_lora_config))
+        else:
+            self.transformer.requires_grad_(False)
+        if image_encoder_1_lora_config is not None:
+            self.image_encoder_1.add_adapter(LoraConfig(**image_encoder_1_lora_config))
+        else:
+            self.image_encoder_1.requires_grad_(False)
+        if image_encoder_2_lora_config is not None:
+            self.image_encoder_2.add_adapter(LoraConfig(**image_encoder_2_lora_config))
+        else:
+            self.image_encoder_2.requires_grad_(False)
+
+    def _load_custom_adapter(self, state_dict):
+        parse_state_dict = lambda state_dict, prefix: {
+            k.replace(prefix, ""): v
+            for k, v in state_dict.items()
+            if k.startswith(prefix)
+        }
+        transformer_state_dict = parse_state_dict(state_dict, "transformer.")
+        image_encoder_1_state_dict = parse_state_dict(state_dict, "image_encoder_1.")
+        image_encoder_2_state_dict = parse_state_dict(state_dict, "image_encoder_2.")
+
+        if len(transformer_state_dict) > 0:
+            self.transformer.load_state_dict(transformer_state_dict, strict=False)
+        if len(image_encoder_1_state_dict) > 0:
+            self.image_encoder_1.load_state_dict(
+                image_encoder_1_state_dict, strict=False
+            )
+        if len(image_encoder_2_state_dict) > 0:
+            self.image_encoder_2.load_state_dict(
+                image_encoder_2_state_dict, strict=False
+            )
+
+    def _save_custom_adapter(
+        self,
+        include_keys: Optional[List[str]] = None,
+        exclude_keys: Optional[List[str]] = None,
+    ):
+        def include_fn(k):
+            is_included = False
+
+            if include_keys is not None:
+                is_included = is_included or any([key in k for key in include_keys])
+            if exclude_keys is not None:
+                is_included = is_included and not any(
+                    [key in k for key in exclude_keys]
+                )
+
+            return is_included
+
+        parse_state_dict = lambda state_dict, prefix: {
+            prefix + k: v for k, v in state_dict.items() if include_fn(k)
+        }
+        transformer_state_dict = parse_state_dict(
+            self.transformer.state_dict(), "transformer."
+        )
+        image_encoder_1_state_dict = parse_state_dict(
+            self.image_encoder_1.state_dict(), "image_encoder_1."
+        )
+        image_encoder_2_state_dict = parse_state_dict(
+            self.image_encoder_2.state_dict(), "image_encoder_2."
+        )
+        state_dict = {
+            **transformer_state_dict,
+            **image_encoder_1_state_dict,
+            **image_encoder_2_state_dict,
+        }
+
+        return state_dict

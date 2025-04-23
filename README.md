@@ -14,6 +14,7 @@ MIDI is a 3D generative model for single image to compositional 3D scene generat
 
 ## 🔥 Updates
 
+* [2025-04] Release [dataset](https://huggingface.co/datasets/huanngzh/3D-Front) and evaluation code.
 * [2025-03] Release model weights, gradio demo, inference scripts of MIDI-3D.
 
 ## 🔨 Installation
@@ -41,6 +42,8 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 # other dependencies
 pip install -r requirements.txt
 ```
+
+For evaluation, you should follow [facebookresearch/pytorch3d](https://github.com/facebookresearch/pytorch3d/blob/main/INSTALL.md) to install `pytorch3d` package.
 
 ## 💡 Usage
 
@@ -76,6 +79,56 @@ python -m scripts.inference_midi --rgb assets/example_data/Cartoon-Style/00_rgb.
 
 * We recommend using the [interactive demo](#launch-demo) to get a segmentation map of moderate granularity.
 * If instances in your image are too close to the image border, please add `--do-image-padding` to the running scripts of MIDI.
+
+## 📊 Dataset
+
+Our processed [3D-Front](https://tianchi.aliyun.com/specials/promotion/alibaba-3d-scene-dataset) dataset can be downloaded from [3D-Front (MIDI)](https://huggingface.co/datasets/huanngzh/3D-Front). Please follow the [dataset card](https://huggingface.co/datasets/huanngzh/3D-Front/blob/main/README.md) to organize the dataset:
+
+```Bash
+data/3d-front
+├── 3D-FRONT-RENDER # rendered views
+│   ├── 0a8d471a-2587-458a-9214-586e003e9cf9 # house
+│   │   ├── Hallway-1213 # room
+│   │   ...
+├── 3D-FRONT-SCENE # 3d models (glb)
+│   ├── 0a8d471a-2587-458a-9214-586e003e9cf9 # house
+│   │   ├── Hallway-1213 # room
+│   │   │   ├── Table_e9b6f54f-1d29-47bf-ba38-db51856d3aa5_1.glb # object
+│   │   │   ...
+├── 3D-FRONT-SURFACE # point cloud (npy)
+│   ├── 0a8d471a-2587-458a-9214-586e003e9cf9 # house
+│   │   ├── Hallway-1213 # room
+│   │   │   ├── Table_e9b6f54f-1d29-47bf-ba38-db51856d3aa5_1.npy # object
+│   │   │   ...
+├── valid_room_ids.json # scene list
+├── valid_furniture_ids.json # object list
+├── midi_room_ids.json # scene list (subset used in midi)
+└── midi_furniture_ids.json # object list (subset used in midi)
+```
+
+Note that we use **the last 1,000 rooms** in `midi_room_ids.json` as the **testset**, and the others as training set.
+
+## Evaluation
+
+> The key code can be found in `test_step` of `midi/systems/system_midi.py` and `midi/utils/metrics.py`.
+
+Before evaluation, download dataset and pre-trained model weights firstly. A simple script to download weights is provided:
+
+```Bash
+from huggingface_hub import snapshot_download
+
+REPO_ID = "VAST-AI/MIDI-3D"
+local_dir = "pretrained_weights/MIDI-3D"
+snapshot_download(repo_id=REPO_ID, local_dir=local_dir)
+```
+
+Place the dataset in `data/3d-front` directory, and then you can run the following script to evaluate MIDI on 3D-Front dataset. It will save the results in `outputs/image2scene/test-3dfront/save`, including generated 3D scenes and metrics.
+
+```Bash
+python launch.py --config configs/test/3dfront.yaml --test --gpu 0, # --gpu 0,1,2,3,4,5,6,7,
+```
+
+If the dataset is not organized in `data/3d-front`, you should modify the config `configs/test/3dfront.yaml`, filling in the correct dataset path.
 
 ## Citation
 

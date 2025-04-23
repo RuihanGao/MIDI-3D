@@ -283,7 +283,8 @@ class MIAttnProcessor2_0:
         attention_mask: Optional[torch.Tensor] = None,
         temb: Optional[torch.Tensor] = None,
         image_rotary_emb: Optional[torch.Tensor] = None,
-        num_instances: Optional[torch.IntTensor] = None,
+        num_instances: Optional[Union[int, torch.IntTensor]] = None,
+        num_instances_per_batch: Optional[int] = None,
     ) -> torch.Tensor:
         from diffusers.models.embeddings import apply_rotary_emb
 
@@ -363,7 +364,17 @@ class MIAttnProcessor2_0:
             if not attn.is_cross_attention:
                 key = apply_rotary_emb(key, image_rotary_emb)
 
-        if self.use_mi and num_instances is not None:
+        if not self.use_mi:
+            hidden_states = F.scaled_dot_product_attention(
+                query,
+                key,
+                value,
+                attn_mask=attention_mask,
+                dropout_p=0.0,
+                is_causal=False,
+            )
+        elif num_instances is not None and num_instances_per_batch is None:
+            # for inference
             key = rearrange(
                 key, "(b ni) h nt c -> b h (ni nt) c", ni=num_instances
             ).repeat_interleave(num_instances, dim=0)
@@ -379,15 +390,60 @@ class MIAttnProcessor2_0:
                 dropout_p=0.0,
                 is_causal=False,
             )
-        else:
-            hidden_states = F.scaled_dot_product_attention(
-                query,
-                key,
-                value,
-                attn_mask=attention_mask,
-                dropout_p=0.0,
-                is_causal=False,
-            )
+        elif num_instances is not None and num_instances_per_batch is not None:
+            # for training (the same batch size is required)
+            # process multi-instance attention among the first `num_instances` samples
+            # and do object self-attention on the left samples in per batch
+            patch_hidden_states = []
+            start_idx = 0
+            while start_idx < batch_size:  # for classifier-free guidance
+                for num in num_instances:
+                    # Multi-object self-attention
+                    query_ = query[start_idx : start_idx + num]
+                    key_ = rearrange(
+                        key[start_idx : start_idx + num],
+                        "(b ni) h nt c -> b h (ni nt) c",
+                        ni=num,
+                    ).repeat_interleave(num, dim=0)
+                    value_ = rearrange(
+                        value[start_idx : start_idx + num],
+                        "(b ni) h nt c -> b h (ni nt) c",
+                        ni=num,
+                    ).repeat_interleave(num, dim=0)
+
+                    patch_hidden_states.append(
+                        F.scaled_dot_product_attention(
+                            query_,
+                            key_,
+                            value_,
+                            dropout_p=0.0,
+                            is_causal=False,
+                        )
+                    )
+
+                    # Single-object self-attention for padding and regularization
+                    query_ = query[
+                        start_idx + num : start_idx + num_instances_per_batch
+                    ]
+                    key_ = key[start_idx + num : start_idx + num_instances_per_batch]
+                    value_ = value[
+                        start_idx + num : start_idx + num_instances_per_batch
+                    ]
+
+                    if query_.shape[0] > 0:
+                        patch_hidden_states.append(
+                            F.scaled_dot_product_attention(
+                                query_,
+                                key_,
+                                value_,
+                                dropout_p=0.0,
+                                is_causal=False,
+                            )
+                        )
+
+                    start_idx += num_instances_per_batch
+
+            hidden_states = torch.cat(patch_hidden_states, dim=0)
 
         hidden_states = hidden_states.transpose(1, 2).reshape(
             batch_size, -1, attn.heads * head_dim
