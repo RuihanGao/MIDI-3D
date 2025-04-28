@@ -1,0 +1,4 @@
+CUDA_VISIBLE_DEVICES=1 python -m scripts.inference_midi --rgb assets/data/midi_images_simplified_prompts/fruit_basket.jpeg --seg output/fruit_basket_seg.png --output-dir "./output" & 
+CUDA_VISIBLE_DEVICES=2 python -m scripts.inference_midi --rgb assets/data/midi_images_simplified_prompts/headphone_stand.png --seg output/headphone_stand_seg.png --output-dir "./output" &
+CUDA_VISIBLE_DEVICES=3 python -m scripts.inference_midi --rgb assets/data/midi_images_simplified_prompts/stacked_cups.png --seg output/stacked_cups_seg.png --output-dir "./output" 
+CUDA_VISIBLE_DEVICES=1 python -m scripts.inference_midi --rgb assets/data/midi_images_simplified_prompts/vase_table.png --seg output/vase_table_seg.png --output-dir "./output"

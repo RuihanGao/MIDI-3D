@@ -1,0 +1,6 @@
+output/
+tmp/
+*.pyc
+*.glb
+*.safetensors
+pretrained_weights/

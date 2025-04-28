@@ -173,6 +173,10 @@ if __name__ == "__main__":
         ]
     )
 
+    obj_name = args.rgb.split("/")[-1].split(".")[0]
+    output_path = os.path.join(args.output_dir, f"{obj_name}.glb")
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
     run_midi(
         pipe,
         rgb_image=args.rgb,
@@ -181,4 +185,6 @@ if __name__ == "__main__":
         num_inference_steps=args.num_inference_steps,
         guidance_scale=args.guidance_scale,
         do_image_padding=args.do_image_padding,
-    ).export(os.path.join(args.output_dir, "output.glb"))
+    ).export(output_path)
+
+    print(f"Exported 3D to {output_path}")

@@ -342,7 +342,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", type=str, required=True)
     parser.add_argument("--labels", type=str, nargs="+", required=True)
-    parser.add_argument("--output", type=str, default="./", help="Output directory")
+    parser.add_argument("--output", type=str, default="./output", help="Output directory")
+    parser.add_argument("--output_name", type=str, default="segmentation")
     parser.add_argument("--threshold", type=float, default=0.3)
     parser.add_argument(
         "--detector_id", type=str, default="IDEA-Research/grounding-dino-base"
@@ -366,4 +367,9 @@ if __name__ == "__main__":
     )
 
     os.makedirs(args.output, exist_ok=True)
-    seg_map_pil.save(os.path.join(args.output, "segmentation.png"))
+    # output_path = os.path.join(args.output, args.output_name + ".jpg")
+    # use the image name to save the segmentation map
+    image_base_name = args.image.split("/")[-1].split(".")[0]
+    output_path = os.path.join(args.output, f"{image_base_name}_seg.png")
+    seg_map_pil.save(output_path)
+    print(f"Segmentation map saved to {output_path}")

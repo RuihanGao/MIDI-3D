@@ -230,8 +230,11 @@ with gr.Blocks() as demo:
         with gr.Column():
             with gr.Row():
                 image_prompts = ImagePrompter(label="Input Image", type="pil")
+                # seg_image = gr.Image(
+                #     label="Segmentation Result", type="pil", format="png"
+                # )
                 seg_image = gr.Image(
-                    label="Segmentation Result", type="pil", format="png"
+                    label="Segmentation Result", type="pil"
                 )
 
             with gr.Accordion("Segmentation Settings", open=False):
@@ -266,7 +269,9 @@ with gr.Blocks() as demo:
 
         with gr.Column():
             model_output = LitModel3D(label="Generated GLB", exposure=1.0, height=500)
-            download_glb = gr.DownloadButton(label="Download GLB", interactive=False)
+            # download_glb = gr.DownloadButton(label="Download GLB", interactive=False)
+            download_glb = gr.File(label="Download GLB")
+
 
     with gr.Row():
         gr.Examples(
@@ -284,7 +289,7 @@ with gr.Blocks() as demo:
             polygon_refinement,
         ],
         outputs=[seg_image],
-    ).then(lambda: gr.Button(interactive=True), outputs=[gen_button])
+    )# .then(lambda: gr.Button(interactive=True), outputs=[gen_button])
 
     gen_button.click(
         run_generation,
@@ -301,4 +306,5 @@ with gr.Blocks() as demo:
     ).then(lambda: gr.Button(interactive=True), outputs=[download_glb])
 
 
-demo.launch()
+# demo.launch()
+demo.launch(server_name="0.0.0.0", server_port=7860, share=True)
