@@ -139,11 +139,8 @@ def run_midi(
         # Trimesh
         mesh = trimesh.Trimesh(vertices.astype(np.float32), np.ascontiguousarray(faces))
         trimeshes.append(mesh)
-
-    # compose the output meshes
-    scene = trimesh.Scene(trimeshes)
-
-    return scene
+    
+    return trimeshes
 
 
 if __name__ == "__main__":
@@ -158,6 +155,7 @@ if __name__ == "__main__":
     parser.add_argument("--guidance-scale", type=float, default=7.0)
     parser.add_argument("--do-image-padding", action="store_true")
     parser.add_argument("--output-dir", type=str, default="./")
+    parser.add_argument("--save_individual_mesh", action="store_true", help="Save individual meshes as .obj files")
     args = parser.parse_args()
 
     local_dir = "pretrained_weights/MIDI-3D"
@@ -174,10 +172,10 @@ if __name__ == "__main__":
     )
 
     obj_name = args.rgb.split("/")[-1].split(".")[0]
-    output_path = os.path.join(args.output_dir, f"{obj_name}.glb")
+    output_path = os.path.join(args.output_dir, f"{obj_name}.glb") # the output is textureless regardless of .obj/.glb formats
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
-    run_midi(
+    trimeshes = run_midi(
         pipe,
         rgb_image=args.rgb,
         seg_image=args.seg,
@@ -185,6 +183,14 @@ if __name__ == "__main__":
         num_inference_steps=args.num_inference_steps,
         guidance_scale=args.guidance_scale,
         do_image_padding=args.do_image_padding,
-    ).export(output_path)
-
+    )
+    # save each individual mesh
+    if args.save_individual_mesh:
+        for i, mesh in enumerate(trimeshes):
+            mesh.export(os.path.join(args.output_dir, f"{obj_name}_{i}.obj"))
+            print(f"Exported {len(trimeshes)} individual meshes to {args.output_dir}")
+    
+    # compose the output meshes into a single scene
+    scene = trimesh.Scene(trimeshes)
+    scene.export(output_path)
     print(f"Exported 3D to {output_path}")
